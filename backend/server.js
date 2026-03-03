@@ -3,6 +3,7 @@ const express = require("express");
 const connectDb= require("./src/config/db");
 const color = require("colors");
 const cors = require("cors");
+const userRoute = require("./src/routes/userRoutes");
 
 PORT = process.env.PORT || 8080;    
 
@@ -15,11 +16,13 @@ app.use(express.json());
 
 connectDb();
 
-
+app.use("/api/users",userRoute);
 
 app.get("/" , (req,res)=>{
     res.send("API id Running".green.bold);
 });
+
+
 
 app.listen(PORT ,()=>
 {

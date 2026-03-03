@@ -1,6 +1,7 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
-const User = require("./models/users");
+const User = require("../models/users");
+const bcrypt = require("bcryptjs");
 
 
 const genrateToken = (id) =>
@@ -16,19 +17,20 @@ const registerUser = async (req,res) =>
 
         if(!name || !email || ! password)
         {
-            throw new Error("All Field Required")
+            return res.status(403).json({message:"all fields required"})
         }
-    
-        const exsistingUser = User.findOne({email});
-    
-        if(exsistingUser)
+        console.log(email);
+        const existingUser = await User.findOne({email});
+
+        // console.log(existingUser.email);
+        if(existingUser)
         {
-            throw new Error("User Already Exsist")
-    
+            return res.status(409).json({message:"User Already Exist"});
+             
         }
 
         const user = await User.create({
-            user,
+            name,
             email,
             password
         });
@@ -43,8 +45,7 @@ const registerUser = async (req,res) =>
 
             })
         }else{
-            res.status(400);
-            throw new Error('User creation Failed')
+             return res.status(500).json({message:error.message});
         }
 
         
@@ -56,3 +57,37 @@ const registerUser = async (req,res) =>
     }
 
 }
+
+const loginUser = async (req,res) =>
+{
+    try{
+
+        const {email,password} = req.body;
+
+        const user = await User.findOne({email}).select("+password");
+
+        if(!user)
+        {
+           throw new Error("Invalid Credentials(Email)"); 
+        }
+        
+        const isMatched = await bcrypt.compare(password,user.password);
+        if(isMatched)
+        {
+            return res.status(200).json({
+            
+                token: genrateToken(user._id)})
+        }else
+        {
+            throw new Error("Invalid Credentials(Password)"); 
+
+        }
+
+        
+
+    }catch(error){
+        res.status(res.statusCode || 500).json({ message: error.message });
+    }
+}
+
+module.exports = {registerUser,loginUser};
